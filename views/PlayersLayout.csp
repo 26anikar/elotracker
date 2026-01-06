@@ -1,0 +1,80 @@
+<%layout GlobalLayout%>
+<%inc #include <nop/serializer.h> 
+      #include <nop/structure.h> 
+     #include <nop/utility/stream_writer.h>
+   #include <nop/utility/stream_reader.h>
+ #include "/mnt/disks/data2/common.h"
+ #include <vector>
+%>
+
+<%c++
+  auto ptype = @@.get<string>("page_type");
+  auto page_type_int = @@.get<int>("page_type_int");
+  vector<string> keys;
+  if (ptype == "top_players") {
+    keys = @@.get<vector<string>>("top_players_keys");
+  }
+  if (ptype == "top_women") {
+    keys = @@.get<vector<string>>("top_women_keys");
+  }
+  if (ptype == "top_juniors") {
+    keys = @@.get<vector<string>>("top_juniors_keys");
+  }
+
+%>
+
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+
+
+
+
+<%c++
+        for (const auto& k : keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-0 ms-4">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-U" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+        
+
+          
+          
+          </div>
+
+

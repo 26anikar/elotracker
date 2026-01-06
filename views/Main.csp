@@ -1,0 +1,422 @@
+<%layout GlobalLayout%>
+<%inc #include <nop/serializer.h> 
+      #include <nop/structure.h> 
+     #include <nop/utility/stream_writer.h>
+   #include <nop/utility/stream_reader.h>
+ #include "/mnt/disks/data2/common.h"
+ #include <vector>
+%>
+
+<%c++
+	auto uscf_classical_keys=@@.get<vector<string>>("uscf_classical_keys");
+	auto uscf_rapid_keys=@@.get<vector<string>>("uscf_rapid_keys");
+	auto uscf_blitz_keys=@@.get<vector<string>>("uscf_blitz_keys");
+
+	auto fide_classical_keys=@@.get<vector<string>>("fide_classical_keys");
+	auto fide_rapid_keys=@@.get<vector<string>>("fide_rapid_keys");
+	auto fide_blitz_keys=@@.get<vector<string>>("fide_blitz_keys");
+%>
+
+
+        <div class="sm:hidden">
+          <label for="tabs" class="sr-only">Select tab</label>
+          <select id="tabs" class="bg-gray-50 border-0 border-b border-gray-200 text-gray-900 text-sm rounded-t-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              <option data-id="classical">Classsical</option>
+              <option data-id="rapid">Rapid</option>
+              <option data-id="blitz">Blitz</option>
+              <option data-id="uscfclassical">Classsical (USCF)</option>
+              <option data-id="uscfrapid">Rapid (USCF)</option>
+              <option data-id="uscfblitz">Blitz (USCF)</option>
+          </select>
+      </div>
+
+
+
+      <ul class="hidden text-sm font-medium text-center text-gray-500 divide-x divide-gray-200 rounded-lg sm:flex dark:divide-gray-600 dark:text-gray-400" id="fullWidthTab" data-tabs-toggle="#fullWidthTabContent" role="tablist">
+        <li class="w-full">
+            <button id="classical-tab" data-tabs-target="#classical" type="button" role="tab" aria-controls="classical" aria-selected="true" class="inline-block w-full p-4 rounded-tl-lg bg-gray-50 hover:bg-gray-100 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600">Classical</button>
+        </li>
+        <li class="w-full">
+            <button id="rapid-tab" data-tabs-target="#rapid" type="button" role="tab" aria-controls="rapid" aria-selected="false" class="inline-block w-full p-4 rounded-tr-lg bg-gray-50 hover:bg-gray-100 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600">Rapid</button>
+        </li>
+        <li class="w-full">
+            <button id="bliz-tab" data-tabs-target="#blitz" type="button" role="tab" aria-controls="blitz" aria-selected="false" class="inline-block w-full p-4 rounded-tr-lg bg-gray-50 hover:bg-gray-100 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600">Blitz</button>
+        </li>
+
+        <li class="w-full">
+            <button id="uscfclassical-tab" data-tabs-target="#uscfclassical" type="button" role="tab" aria-controls="uscfclassical" aria-selected="false" class="inline-block w-full p-4 rounded-tl-lg bg-gray-50 hover:bg-gray-100 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600">Classical (USCF)</button>
+        </li>
+        <li class="w-full">
+            <button id="uscfrapid-tab" data-tabs-target="#uscfrapid" type="button" role="tab" aria-controls="uscfrapid" aria-selected="false" class="inline-block w-full p-4 rounded-tr-lg bg-gray-50 hover:bg-gray-100 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600">Rapid (USCF)</button>
+        </li>
+        <li class="w-full">
+            <button id="uscfblitz-tab" data-tabs-target="#uscfblitz" type="button" role="tab" aria-controls="uscfblitz" aria-selected="false" class="inline-block w-full p-4 rounded-tr-lg bg-gray-50 hover:bg-gray-100 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600">Blitz (USCF)</button>
+        </li>
+
+  </ul>
+
+
+    <div id="fullWidthTabContent" class="border-t border-gray-200 dark:border-gray-600">
+        <div class="hidden pt-4" id="classical" role="tabpanel" aria-labelledby="classical-tab">
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+
+<%c++
+        for (const auto& k : fide_classical_keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-3 ms-4 text-clip overflow-hidden">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-F" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+
+                          <div class="flex-1 ml-2 min-w-0 ms-4 mt-2">
+                          <span class="f24"><span class="flag <%c++ $$<<kv.second.country; %>" title=""></span></span>			  
+			  </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+        
+          </div>
+
+  </div>
+  </div>
+
+
+    <div id="fullWidthTabContent" class="border-t border-gray-200 dark:border-gray-600">
+        <div class="hidden pt-4" id="uscfclassical" role="tabpanel" aria-labelledby="uscfclassical-tab">
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+
+<%c++
+        for (const auto& k : uscf_classical_keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-3 ms-4 text-clip overflow-hidden">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-U" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+        
+
+          
+          
+          </div>
+
+  </div>
+  </div>
+
+
+ <!--Rapid-->
+
+    <div id="fullWidthTabContent" class="border-t border-gray-200 dark:border-gray-600">
+        <div class="hidden pt-4" id="rapid" role="tabpanel" aria-labelledby="rapid-tab">
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+
+
+<%c++
+        for (const auto& k : fide_rapid_keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-3 ms-4 text-clip overflow-hidden">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-F" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+                          <div class="flex-1 ml-2 min-w-0 ms-4 mt-2">
+			  <span class="f24"><span class="flag <%c++ $$<<kv.second.country; %>" title=""></span></span>
+			  </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+        
+          
+          </div>
+
+  </div>
+  </div>
+
+
+    <div id="fullWidthTabContent" class="border-t border-gray-200 dark:border-gray-600">
+        <div class="hidden pt-4" id="uscfrapid" role="tabpanel" aria-labelledby="uscfrapid-tab">
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+<%c++
+        for (const auto& k : uscf_rapid_keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-3 ms-4 text-clip overflow-hidden">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-U" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+        
+
+          
+          
+          </div>
+
+  </div>
+  </div>
+
+
+ <!-- Blitz -->
+
+    <div id="fullWidthTabContent" class="border-t border-gray-200 dark:border-gray-600">
+        <div class="hidden pt-4" id="blitz" role="tabpanel" aria-labelledby="blitz-tab">
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+
+
+<%c++
+        for (const auto& k : fide_blitz_keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-3 ms-4 text-clip overflow-hidden">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-F" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+                          <div class="flex-1 ml-2 min-w-0 ms-4 mt-2">
+			  <span class="f24"><span class="flag <%c++ $$<<kv.second.country; %>" title=""></span></span>
+			  </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+
+          </div>
+
+  </div>
+  </div>
+
+
+    <div id="fullWidthTabContent" class="border-t border-gray-200 dark:border-gray-600">
+        <div class="hidden pt-4" id="uscfblitz" role="tabpanel" aria-labelledby="uscfblitz-tab">
+
+
+        <div class="grid xl:grid-cols-2 md:grid-cols-2 2xl:grid-cols-3 gap-4 ml-4 mt-4">
+
+<%c++
+        for (const auto& k : uscf_blitz_keys) {
+	
+%>	
+          <div class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900 dark:text-white"><%c++ $$<<k; %></h5>
+           </div>
+           <div class="flow-root">
+                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+		<%c++ 	auto top_players=@@.get<TopPlayers>(k);
+               for (const auto& kv: top_players.playerMap) {
+
+                %>
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center">
+                          <div class="w-8 text-right mr-2"> <%c++ $$<<kv.first; %>. </div>
+                          <div class="flex-1 min-w-3 ms-4 text-clip overflow-hidden">
+			  <%c++;
+			    string url = kv.second.name;
+                            std::replace(url.begin(), url.end(), ' ', '-');
+                            url = url + "-U" + kv.second.id;
+			   %>
+
+			  <a href="/player/<%c++ $$<<url;%>" class="inline-flex items-center font-medium text-grey-600 dark:text-grey-500 hover:underline">
+                                <p class="text-sm justify-start font-medium text-gray-900 truncate dark:text-white">
+                                    <%c++ $$<<kv.second.name; %>
+                                </p>
+		          </a>
+                            </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <%c++ $$<<kv.second.rating; %>
+                            </div>
+                        </div>
+                    </li>
+		   <%c++ } %>
+                </ul>
+             </div>
+          </div>
+    <%c++ } %>          
+        
+
+          
+          
+          </div>
+
+  </div>
+  </div>
+
+<script>
+   window.addEventListener("load", function() {
+ const select = document.getElementById('tabs');
+ select.addEventListener('change', (e) => {
+     const selectedTabId = e.target.options[e.target.selectedIndex].getAttribute('data-id');
+
+     document.querySelectorAll('[id^="classical"],[id^="rapid"],[id^="blitz"],[id^="uscfclassical"],[id^="uscfrapid"],[id^="uscfblitz"]').forEach((tabContent) => {
+         tabContent.classList.add('hidden');
+     });
+
+     const activeTabContent = document.getElementById(selectedTabId);
+     if (activeTabContent) {
+         activeTabContent.classList.remove('hidden');
+     }
+ });
+ });
+ </script>

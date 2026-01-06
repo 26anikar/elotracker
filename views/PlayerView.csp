@@ -1,0 +1,718 @@
+<%layout GlobalLayout%>
+<%inc #include <nop/serializer.h> 
+      #include <nop/structure.h> 
+     #include <nop/utility/stream_writer.h>
+   #include <nop/utility/stream_reader.h>
+ #include "/mnt/disks/data2/common.h"
+%>
+
+<%c++
+	auto uscf_member=@@.get<Member>("uscf_member");
+	auto fide_member=@@.get<Member>("fide_member");
+	auto fide_member_supplement=@@.get<MemberSupplementRating>("fide_member_supplements");
+	auto uscf_member_supplement=@@.get<MemberSupplementRating>("uscf_member_supplements");
+	auto is_fide = @@.get<int>("is_fide");
+	auto is_uscf = @@.get<int>("is_uscf");
+	string name, country, birthday, fide_title, gender;
+	if (is_fide == 1) {
+	   name = fide_member.name;
+	   country = fide_member.country;
+	   birthday = fide_member.birthday;
+	   fide_title = fide_member.fide_title;
+	   gender = fide_member.gender;
+        } else {
+           name = uscf_member.name;
+	   country = uscf_member.country;
+	   birthday = uscf_member.birthday;
+	   gender = uscf_member.gender;
+        }
+        string fide_regular_series = "[";
+        string fide_quick_series = "[";
+        string fide_blitz_series = "[";
+	string fide_dates = "[";
+        string uscf_regular_series = "[";
+        string uscf_quick_series = "[";
+        string uscf_blitz_series = "[";
+        string uscf_dates = "[";
+	int i = 0;
+	if (is_fide == 1) {
+	 for (const auto& kvPair: fide_member_supplement.supplement_ratings) {
+	   auto suppRating = kvPair.second;
+	   if (i>0) {
+              fide_regular_series += ",";
+              fide_quick_series += ",";
+              fide_blitz_series += ",";
+	      fide_dates += ",";
+           }
+	   if (suppRating.regular_rating == "") {
+              fide_regular_series += "null";
+           } else {
+              fide_regular_series += suppRating.regular_rating;
+	   }
+	   if (suppRating.quick_rating == "") {
+              fide_quick_series += "null";
+           } else {
+             fide_quick_series += suppRating.quick_rating;
+	   }
+	   if (suppRating.quick_rating == "") {
+              fide_blitz_series += "null";
+           } else {
+             fide_blitz_series += suppRating.blitz_rating;
+	   }
+	   string date = kvPair.first.substr(0,4) + "-" + kvPair.first.substr(4) + "-01";
+	   //fide_dates += "\"" + kvPair.first + "\"";
+	   fide_dates += "\"" + date + "\"";
+	   
+	   i++;
+          }
+	}
+	fide_regular_series += "]";
+	fide_quick_series += "]";
+	fide_blitz_series += "]";
+	fide_dates += "]";
+
+	string uscf_supp_regular_rating;
+	i = 0;
+        if (is_uscf == 1) {
+	   uscf_supp_regular_rating = uscf_member.supp_regular_rating;
+	   int starPos = uscf_supp_regular_rating.find('*');
+	   if (starPos != -1) {
+              uscf_supp_regular_rating = uscf_supp_regular_rating.substr(0, starPos);
+           }
+
+
+          for (const auto& kvPair: uscf_member_supplement.supplement_ratings) {
+	   auto suppRating = kvPair.second;
+
+	   string regular_rating = suppRating.regular_rating;
+	   string quick_rating = suppRating.quick_rating;
+	   string blitz_rating = suppRating.blitz_rating;
+
+	   int parPos = regular_rating.find('/');
+	   if (parPos != -1) {
+              regular_rating = regular_rating.substr(0,parPos);
+           }
+	   int starPos = regular_rating.find('*');
+	   if (starPos != -1) {
+              regular_rating = regular_rating.substr(0, starPos);
+           }
+
+           parPos = quick_rating.find('/');
+	   if (parPos != -1) {
+              quick_rating = quick_rating.substr(0,parPos);
+           }
+	   starPos = quick_rating.find('*');
+	   if (starPos != -1) {
+              quick_rating = quick_rating.substr(0, starPos);
+           }
+
+           parPos = blitz_rating.find('/');
+	   if (parPos != -1) {
+              blitz_rating = blitz_rating.substr(0,parPos);
+           }
+	   starPos = blitz_rating.find('*');
+	   if (starPos != -1) {
+              blitz_rating = blitz_rating.substr(0, starPos);
+           }
+
+	   if (i>0) {
+              uscf_regular_series += ",";
+              uscf_quick_series += ",";
+              uscf_blitz_series += ",";
+	      uscf_dates += ",";
+           }
+
+	   if (regular_rating == "") {
+              uscf_regular_series += "null";
+           } else {
+              uscf_regular_series += regular_rating;
+	   }
+	   if (quick_rating == "") {
+              uscf_quick_series += "null";
+           } else {
+              uscf_quick_series += quick_rating;
+	   }
+	   if (blitz_rating == "") {
+              uscf_blitz_series += "null";
+           } else {
+              uscf_blitz_series += blitz_rating;
+	   }
+
+	   string date = kvPair.first.substr(0,4) + "-" + kvPair.first.substr(4) + "-01";
+	   //fide_dates += "\"" + kvPair.first + "\"";
+	   uscf_dates += "\"" + date + "\"";
+	   
+	   i++;
+          }
+	}
+	uscf_regular_series += "]";
+	uscf_quick_series += "]";
+	uscf_blitz_series += "]";
+	uscf_dates += "]";
+
+        //cout << " regular eries is " << fide_regular_series << endl;
+	//cout << " fide_dates is " << fide_dates << endl;
+%>
+
+
+    
+    
+    
+        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+          <!-- Card header -->
+          <div class="items-center justify-between lg:flex">
+            <div class="mb-4 lg:mb-0">
+              <h3 class="mb-2 text-xl font-bold text-gray-900 dark:text-white"><%c++$$<<name;%></h3>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 px-2 w-full">
+            <div class="flex flex-col items-start justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">Country</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<country;%>
+            </p>
+            </div>
+
+            <div class="flex flex-col justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">Birth Year</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<birthday;%>
+            </p>
+
+           </div>
+
+
+            <div class="flex flex-col items-start justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">Gender</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<gender;%>
+            </p>
+            </div>
+
+            <div class="flex flex-col justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">Title</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<fide_title;%>
+            </p>
+
+           </div>
+
+
+	    <%c++ if (is_fide == 1) { %>
+            <div class="flex flex-col justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">FIDE ID</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<fide_member.id; %>
+            </p>
+            </div>
+
+            <div class="flex flex-col items-start justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">FIDE Rating</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<fide_member.supp_regular_rating; %>
+            </p>
+            </div>
+	    <%c++ } %>
+
+
+	    <%c++ if (is_uscf == 1) { %>
+            <div class="flex flex-col justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">USCF ID</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<uscf_member.id; %>
+            </p>
+            </div>
+
+            <div class="flex flex-col items-start justify-center rounded-2xl bg-white bg-clip-border px-3 py-2 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+            <p class="text-sm text-gray-600">USCF Rating</p>
+            <p class="text-base font-medium text-navy-700 dark:text-white">
+                <%c++$$<<uscf_supp_regular_rating; %>
+            </p>
+            </div>
+	    <%c++ } %>
+
+
+          </div>
+        </div>          
+    
+    
+    
+        
+    
+<%c++ if (is_fide==1){ %>
+    
+        <br>
+    
+          <!-- Main widget -->
+
+        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex-shrink-0">
+            <span class="text-xl font-bold leading-none text-gray-900 sm:text-2xl dark:text-white">FIDE Rating Graph</span>
+            <!-- <h3 class="text-base font-light text-gray-500 dark:text-gray-400">Sales this week</h3> -->
+          </div>
+	  <!--
+          <div class="flex items-center justify-end flex-1 text-base font-medium text-green-500 dark:text-green-400">
+            12.5% 
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd"
+                d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </div>
+	  -->
+        </div>
+        <div id="fide-chart"></div>
+        <!-- Card Footer -->
+
+<!--
+        <div class="flex items-center justify-between pt-3 mt-4 border-t border-gray-200 sm:pt-6 dark:border-gray-700">
+
+          <div>
+            <button class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-500 rounded-lg hover:text-gray-900 dark:text-gray-400 dark:hover:text-white" type="button" data-dropdown-toggle="weekly-sales-dropdown">Last 7 days <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+            
+            <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-700 dark:divide-gray-600" id="weekly-sales-dropdown">
+                <div class="px-4 py-3" role="none">
+                  <p class="text-sm font-medium text-gray-900 truncate dark:text-white" role="none">
+                    Sep 16, 2021 - Sep 22, 2021
+                  </p>
+                </div>
+                <ul class="py-1" role="none">
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Yesterday</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Today</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Last 7 days</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Last 30 days</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Last 90 days</a>
+                  </li>
+                </ul>
+                <div class="py-1" role="none">
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Custom...</a>
+                </div>
+            </div>
+          </div>
+
+          <div class="flex-shrink-0">
+            <a href="#" class="inline-flex items-center p-2 text-xs font-medium uppercase rounded-lg text-primary-700 sm:text-sm hover:bg-gray-100 dark:text-primary-500 dark:hover:bg-gray-700">
+              Sales Report
+              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+          </div>
+
+
+        </div>
+      -->
+      </div>
+
+<%c++ } %>
+
+
+<%c++ if (is_uscf==1){ %>
+
+        <br>
+    
+          <!-- Main widget -->
+
+        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex-shrink-0">
+            <span class="text-xl font-bold leading-none text-gray-900 sm:text-2xl dark:text-white">USCF Rating Graph</span>
+            <!-- <h3 class="text-base font-light text-gray-500 dark:text-gray-400">Sales this week</h3> -->
+          </div>
+	  <!--
+          <div class="flex items-center justify-end flex-1 text-base font-medium text-green-500 dark:text-green-400">
+            12.5% 
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd"
+                d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </div>
+	  -->
+        </div>
+        <div id="uscf-chart"></div>
+        <!-- Card Footer -->
+
+<!--
+        <div class="flex items-center justify-between pt-3 mt-4 border-t border-gray-200 sm:pt-6 dark:border-gray-700">
+          <div>
+            <button class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-500 rounded-lg hover:text-gray-900 dark:text-gray-400 dark:hover:text-white" type="button" data-dropdown-toggle="weekly-sales-dropdown">Last 7 days <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+            
+            <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-700 dark:divide-gray-600" id="weekly-sales-dropdown">
+                <div class="px-4 py-3" role="none">
+                  <p class="text-sm font-medium text-gray-900 truncate dark:text-white" role="none">
+                    Sep 16, 2021 - Sep 22, 2021
+                  </p>
+                </div>
+                <ul class="py-1" role="none">
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Yesterday</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Today</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Last 7 days</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Last 30 days</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Last 90 days</a>
+                  </li>
+                </ul>
+                <div class="py-1" role="none">
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Custom...</a>
+                </div>
+            </div>
+          </div>
+          <div class="flex-shrink-0">
+            <a href="#" class="inline-flex items-center p-2 text-xs font-medium uppercase rounded-lg text-primary-700 sm:text-sm hover:bg-gray-100 dark:text-primary-500 dark:hover:bg-gray-700">
+              Sales Report
+              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+          </div>
+        </div>
+-->
+
+      </div>
+<%c++ } %>
+
+
+  
+
+<script>
+<%c++ if (is_fide == 1) { %>
+      const getFIDEChartOptions = () => {
+        let mainChartColors = {}
+    
+        if (document.documentElement.classList.contains('dark')) {
+            mainChartColors = {
+                borderColor: '#374151',
+                labelColor: '#9CA3AF',
+                opacityFrom: 0,
+                opacityTo: 0.15,
+            };
+        } else {
+            mainChartColors = {
+                borderColor: '#F3F4F6',
+                labelColor: '#6B7280',
+                opacityFrom: 0.45,
+                opacityTo: 0,
+            }
+        }
+    
+        return {
+            chart: {
+                height: 420,
+                type: 'area',
+                fontFamily: 'Inter, sans-serif',
+                foreColor: mainChartColors.labelColor,
+                toolbar: {
+                    show: false
+                }
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    enabled: true,
+                    opacityFrom: mainChartColors.opacityFrom,
+                    opacityTo: mainChartColors.opacityTo
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            tooltip: {
+                style: {
+                    fontSize: '14px',
+                    fontFamily: 'Inter, sans-serif',
+                },
+            },
+            grid: {
+                show: true,
+                borderColor: mainChartColors.borderColor,
+                strokeDashArray: 1,
+                padding: {
+                    left: 35,
+                    bottom: 15
+                }
+            },
+            series: [
+                {
+                    name: 'Regular Rating',
+                    data: <%c++$$<<fide_regular_series;%>,
+                    color: '#1A56DB'
+                },
+                {
+                    name: 'Rapid Rating',
+                    data: <%c++$$<<fide_quick_series;%>,
+                    color: '#FDBA8C'
+                },
+                {
+                    name: 'Blitz Rating',
+                    data: <%c++$$<<fide_blitz_series;%>,
+                    color: '#4F7942'
+                }
+            ],
+	    stroke: {
+                curve: 'straight',
+            },
+            markers: {
+                size: 5,
+                strokeColors: '#ffffff',
+                hover: {
+                    size: undefined,
+                    sizeOffset: 3
+                }
+            },
+            xaxis: {
+	        type: "datetime",
+                categories: <%c++$$<<fide_dates;%>,
+                labels: {
+                    style: {
+                        colors: [mainChartColors.labelColor],
+                        fontSize: '14px',
+                        fontWeight: 500,
+                    },
+                },
+                axisBorder: {
+                    color: mainChartColors.borderColor,
+                },
+                axisTicks: {
+                    color: mainChartColors.borderColor,
+                },
+                crosshairs: {
+                    show: true,
+                    position: 'back',
+                    stroke: {
+                        color: mainChartColors.borderColor,
+                        width: 1,
+                        dashArray: 10,
+                    },
+                },
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        colors: [mainChartColors.labelColor],
+                        fontSize: '14px',
+                        fontWeight: 500,
+                    },
+                    formatter: function (value) {
+                        return value;
+                    }
+                },
+            },
+            legend: {
+                fontSize: '14px',
+                fontWeight: 500,
+                fontFamily: 'Inter, sans-serif',
+                labels: {
+                    colors: [mainChartColors.labelColor]
+                },
+                itemMargin: {
+                    horizontal: 10
+                }
+            },
+            responsive: [
+                {
+                    breakpoint: 1024,
+                    options: {
+                        xaxis: {
+                            labels: {
+                                show: false
+                            }
+                        }
+                    }
+                }
+            ]
+        };
+    }
+<%c++ } %>
+    
+
+<%c++ if (is_uscf == 1) { %>
+      const getUSCFChartOptions = () => {
+        let mainChartColors = {}
+    
+        if (document.documentElement.classList.contains('dark')) {
+            mainChartColors = {
+                borderColor: '#374151',
+                labelColor: '#9CA3AF',
+                opacityFrom: 0,
+                opacityTo: 0.15,
+            };
+        } else {
+            mainChartColors = {
+                borderColor: '#F3F4F6',
+                labelColor: '#6B7280',
+                opacityFrom: 0.45,
+                opacityTo: 0,
+            }
+        }
+    
+        return {
+            chart: {
+                height: 420,
+                type: 'area',
+                fontFamily: 'Inter, sans-serif',
+                foreColor: mainChartColors.labelColor,
+                toolbar: {
+                    show: false
+                }
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    enabled: true,
+                    opacityFrom: mainChartColors.opacityFrom,
+                    opacityTo: mainChartColors.opacityTo
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            tooltip: {
+                style: {
+                    fontSize: '14px',
+                    fontFamily: 'Inter, sans-serif',
+                },
+            },
+            grid: {
+                show: true,
+                borderColor: mainChartColors.borderColor,
+                strokeDashArray: 1,
+                padding: {
+                    left: 35,
+                    bottom: 15
+                }
+            },
+            series: [
+                {
+                    name: 'Regular Rating',
+                    data: <%c++$$<<uscf_regular_series;%>,
+                    color: '#1A56DB'
+                },
+                {
+                    name: 'Rapid Rating',
+                    data: <%c++$$<<uscf_quick_series;%>,
+                    color: '#FDBA8C'
+                },
+                {
+                    name: 'Blitz Rating',
+                    data: <%c++$$<<uscf_blitz_series;%>,
+                    color: '#4F7942'
+                }
+            ],
+	    stroke: {
+                curve: 'straight',
+            },
+            markers: {
+                size: 5,
+                strokeColors: '#ffffff',
+                hover: {
+                    size: undefined,
+                    sizeOffset: 3
+                }
+            },
+            xaxis: {
+	        type: "datetime",
+                categories: <%c++$$<<uscf_dates;%>,
+                labels: {
+                    style: {
+                        colors: [mainChartColors.labelColor],
+                        fontSize: '14px',
+                        fontWeight: 500,
+                    },
+                },
+                axisBorder: {
+                    color: mainChartColors.borderColor,
+                },
+                axisTicks: {
+                    color: mainChartColors.borderColor,
+                },
+                crosshairs: {
+                    show: true,
+                    position: 'back',
+                    stroke: {
+                        color: mainChartColors.borderColor,
+                        width: 1,
+                        dashArray: 10,
+                    },
+                },
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        colors: [mainChartColors.labelColor],
+                        fontSize: '14px',
+                        fontWeight: 500,
+                    },
+                    formatter: function (value) {
+                        return value;
+                    }
+                },
+            },
+            legend: {
+                fontSize: '14px',
+                fontWeight: 500,
+                fontFamily: 'Inter, sans-serif',
+                labels: {
+                    colors: [mainChartColors.labelColor]
+                },
+                itemMargin: {
+                    horizontal: 10
+                }
+            },
+            responsive: [
+                {
+                    breakpoint: 1024,
+                    options: {
+                        xaxis: {
+                            labels: {
+                                show: false
+                            }
+                        }
+                    }
+                }
+            ]
+        };
+    }
+    <%c++ } %>
+
+
+   window.addEventListener("load", function() {
+    if (document.getElementById('fide-chart')) {
+        const chart = new ApexCharts(document.getElementById('fide-chart'), getFIDEChartOptions());
+        chart.render();
+    
+        // init again when toggling dark mode
+        document.addEventListener('dark-mode', function () {
+            chart.updateOptions(getFIDEChartOptions());
+        });
+    }
+    if (document.getElementById('uscf-chart')) {
+        const chart = new ApexCharts(document.getElementById('uscf-chart'), getUSCFChartOptions());
+        chart.render();
+    
+        // init again when toggling dark mode
+        document.addEventListener('dark-mode', function () {
+            chart.updateOptions(getUSCFChartOptions());
+        });
+    }
+
+    }
+    );
+
+</script>
+

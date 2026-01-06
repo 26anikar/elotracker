@@ -1,0 +1,700 @@
+<%inc
+#include <string>
+#include <vector>
+using namespace std;
+%>
+<%c++ auto title = @@.get<std::string>("title"); %>
+<%c++ auto description = @@.get<std::string>("description"); %>
+<%layout GlobalLayout %>
+[[ title ]]
+[[= title]]
+[[ description ]]
+[[= description]]
+
+<div class="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+  <!-- Upload Section -->
+  <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm 2xl:col-span-2 dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex-shrink-0">
+        <h3 class="text-xl font-bold leading-none text-gray-900 sm:text-2xl dark:text-white">Chess Scoresheet OCR</h3>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload a scoresheet image to digitize the game into PGN format</p>
+      </div>
+    </div>
+    
+    <!-- Dropzone -->
+    <div id="dropzone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 transition-colors">
+      <div class="flex flex-col items-center justify-center pt-5 pb-6" id="dropzone-content">
+        <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+        </svg>
+        <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, WEBP (MAX. 10MB)</p>
+      </div>
+      <input id="file-input" type="file" class="hidden" accept="image/*" />
+    </div>
+
+    <!-- Loading Indicator (hidden by default) -->
+    <div id="loading-spinner" class="hidden flex flex-col items-center justify-center w-full h-64">
+      <!-- Animated Hourglass -->
+      <div class="relative">
+        <svg class="w-16 h-16 text-primary-600 animate-pulse" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2h12v4l-5 4 5 4v4H6v-4l5-4-5-4V2zm2 2v2.5l4 3.33 4-3.33V4H8zm0 16h8v-2.5l-4-3.33-4 3.33V20z"/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-3 h-3 bg-primary-500 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+        </div>
+      </div>
+      
+      <!-- Timer display -->
+      <div class="mt-4 text-2xl font-mono font-bold text-primary-600 dark:text-primary-400" id="upload-timer">0s</div>
+      
+      <!-- Processing message with animated dots -->
+      <div class="mt-4 text-center">
+        <p class="text-lg font-medium text-gray-700 dark:text-gray-200">Processing Scoresheet</p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <span class="inline-flex items-center">
+            <span>Analyzing handwriting</span>
+            <span class="loading-dots ml-1">
+              <span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+            </span>
+          </span>
+        </p>
+
+      </div>
+    </div>
+    
+    <style>
+      .loading-dots .dot {
+        animation: dotPulse 1.4s infinite;
+        opacity: 0;
+      }
+      .loading-dots .dot:nth-child(1) { animation-delay: 0s; }
+      .loading-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+      .loading-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes dotPulse {
+        0%, 80%, 100% { opacity: 0; }
+        40% { opacity: 1; }
+      }
+      /* Invalid move highlighting (yellow) */
+      .bg-yellow-100 {
+        background-color: rgb(254 249 195) !important;
+      }
+      .text-yellow-800 {
+        color: rgb(133 77 14) !important;
+      }
+      /* Dark mode */
+      .dark .bg-yellow-100,
+      .dark\:bg-yellow-900 {
+        background-color: rgb(113 63 18) !important;
+      }
+      .dark .text-yellow-800,
+      .dark\:text-yellow-300 {
+        color: rgb(253 224 71) !important;
+      }
+    </style>
+  </div>
+
+  <!-- Examples Section -->
+  <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+    <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Try Examples</h3>
+    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Click on an example scoresheet to see the OCR in action</p>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="example-card cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-primary-500 transition-colors" data-example="example1">
+        <img src="/static/images/examples/scoresheet_example_1.png?v=20260105c" alt="Example 1" class="w-full h-40 object-cover" />
+      </div>
+      <div class="example-card cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-primary-500 transition-colors" data-example="example2">
+        <img src="/static/images/examples/scoresheet_example_2.jpg?v=20260105b" alt="Example 2" class="w-full h-40 object-cover" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Results Section - 3 Column Layout -->
+<div id="results-section" class="hidden mt-4">
+  <div class="grid gap-4 lg:grid-cols-3">
+    
+    <!-- Column 1: Chessboard -->
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+      <h3 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Game Viewer</h3>
+      
+      <div id="board-container" class="flex justify-center mb-4">
+        <div id="chess-board" style="width: 280px;"></div>
+      </div>
+      
+      <!-- Navigation Controls -->
+      <div class="flex justify-center items-center space-x-1 mb-3">
+        <button id="btn-start" class="p-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600" title="Start">
+          <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M15 10l-9 5V5l9 5z" transform="rotate(180 10 10)"/><rect x="4" y="5" width="2" height="10"/></svg>
+        </button>
+        <button id="btn-prev" class="p-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600" title="Previous">
+          <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
+        </button>
+        <span id="move-counter" class="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded">0 / 0</span>
+        <button id="btn-next" class="p-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600" title="Next">
+          <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
+        </button>
+        <button id="btn-end" class="p-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600" title="End">
+          <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M5 10l9-5v10l-9-5z"/><rect x="14" y="5" width="2" height="10"/></svg>
+        </button>
+      </div>
+      
+      <p id="current-move" class="text-xs text-center text-gray-500 dark:text-gray-400">Use ← → keys to navigate</p>
+    </div>
+    
+    <!-- Column 2: Move List -->
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Moves</h3>
+        <div class="text-xs">
+          <span class="text-gray-500 dark:text-gray-400 italic">Illegal moves are marked in yellow and have a cascading effect on future moves.</span>
+        </div>
+      </div>
+      
+      <div id="move-table" class="max-h-80 overflow-y-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-100 dark:bg-gray-600 sticky top-0">
+            <tr>
+              <th class="px-2 py-1.5 text-left text-xs font-medium dark:text-white w-8">#</th>
+              <th class="px-2 py-1.5 text-left text-xs font-medium dark:text-white">White</th>
+              <th class="px-2 py-1.5 text-left text-xs font-medium dark:text-white">Black</th>
+            </tr>
+          </thead>
+          <tbody id="move-list" class="dark:text-gray-300 text-xs"></tbody>
+        </table>
+      </div>
+      
+      <!-- Copy PGN -->
+      <div class="mt-4 pt-4 border-t dark:border-gray-600">
+        <button id="copy-pgn-btn" class="w-full px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700">
+          Copy PGN
+        </button>
+      </div>
+    </div>
+    
+    <!-- Column 3: Uploaded Image Preview -->
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+      <h3 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Scoresheet</h3>
+      <div class="flex justify-center">
+        <img id="uploaded-image" class="max-h-96 rounded-lg border dark:border-gray-600 object-contain" alt="Uploaded scoresheet" />
+      </div>
+
+    </div>
+    
+  </div>
+  
+  <!-- PGN Output (collapsible) -->
+  <details class="mt-4">
+    <summary class="cursor-pointer p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300">
+      Show Raw PGN
+    </summary>
+    <pre id="pgn-output" class="mt-2 p-4 bg-gray-50 rounded-lg dark:bg-gray-800 text-xs font-mono text-gray-900 dark:text-white overflow-x-auto whitespace-pre-wrap max-h-40 overflow-y-auto border dark:border-gray-700"></pre>
+  </details>
+</div>
+
+<!-- Chess Libraries -->
+<link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<script>
+(function() {
+  const API_URL = 'https://images.elotracker.com/ocr';
+  
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const dropzoneContent = document.getElementById('dropzone-content');
+  const loadingSpinner = document.getElementById('loading-spinner');
+  const resultsSection = document.getElementById('results-section');
+  const pgnOutput = document.getElementById('pgn-output');
+  const copyBtn = document.getElementById('copy-pgn-btn');
+  const moveCounter = document.getElementById('move-counter');
+  const currentMoveDisplay = document.getElementById('current-move');
+  const uploadedImage = document.getElementById('uploaded-image');
+  const moveList = document.getElementById('move-list');
+
+  // Chess board state
+  let board = null;
+  let game = null;
+  let moveHistory = [];  // For backward compat with PGN fallback
+  let allMoves = [];     // ALL moves (valid+invalid) for table navigation
+  let currentMoveIndex = -1;
+  let currentFile = null;
+
+  // Dropzone click handler
+  dropzone.addEventListener('click', () => fileInput.click());
+  
+  // File input change handler
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      processFile(e.target.files[0]);
+    }
+  });
+
+  // Drag and drop handlers
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900');
+  });
+
+  dropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900');
+    if (e.dataTransfer.files.length > 0) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  // Example cards
+  document.querySelectorAll('.example-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      const img = card.querySelector('img');
+      showLoading();
+      try {
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        const file = new File([blob], 'example.jpg', { type: 'image/jpeg' });
+        await uploadAndProcess(file);
+      } catch (error) {
+        console.error('Error loading example:', error);
+        hideLoading();
+        alert('Error loading example image');
+      }
+    });
+  });
+
+  // Copy button
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pgnOutput.textContent).then(() => {
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
+    });
+  });
+
+  // Navigation buttons
+  document.getElementById('btn-start').addEventListener('click', () => goToMove(0));
+  document.getElementById('btn-prev').addEventListener('click', () => goToMove(currentMoveIndex - 1));
+  document.getElementById('btn-next').addEventListener('click', () => goToMove(currentMoveIndex + 1));
+  document.getElementById('btn-end').addEventListener('click', () => goToMove(moveHistory.length));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (!resultsSection.classList.contains('hidden')) {
+      if (e.key === 'ArrowLeft') {
+        goToMove(currentMoveIndex - 1);
+        e.preventDefault();
+      } else if (e.key === 'ArrowRight') {
+        goToMove(currentMoveIndex + 1);
+        e.preventDefault();
+      } else if (e.key === 'Home') {
+        goToMove(0);
+        e.preventDefault();
+      } else if (e.key === 'End') {
+        goToMove(moveHistory.length);
+        e.preventDefault();
+      }
+    }
+  });
+
+  let uploadTimer = null;
+  let uploadStartTime = null;
+
+  function showLoading() {
+    dropzoneContent.classList.add('hidden');
+    loadingSpinner.classList.remove('hidden');
+    resultsSection.classList.add('hidden');
+    
+    // Start timer
+    uploadStartTime = Date.now();
+    const timerEl = document.getElementById('upload-timer');
+    timerEl.textContent = '0s';
+    uploadTimer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - uploadStartTime) / 1000);
+      timerEl.textContent = elapsed + 's';
+    }, 1000);
+  }
+
+  function hideLoading() {
+    dropzoneContent.classList.remove('hidden');
+    loadingSpinner.classList.add('hidden');
+    
+    // Stop timer
+    if (uploadTimer) {
+      clearInterval(uploadTimer);
+      uploadTimer = null;
+    }
+  }
+
+  function processFile(file) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+    currentFile = file;
+    showLoading();
+    uploadAndProcess(file);
+  }
+
+  async function uploadAndProcess(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      // Request visualization with bounding boxes
+      const response = await fetch(API_URL + '?include_viz=true', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      displayResults(data, file);
+    } catch (error) {
+      console.error('Error processing scoresheet:', error);
+      alert('Error processing scoresheet: ' + error.message);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function displayResults(data, file) {
+    resultsSection.classList.remove('hidden');
+    
+    // Display visualization image with bounding boxes (preferred) or fallback to uploaded image
+    if (data.visualization) {
+      uploadedImage.src = data.visualization;
+    } else if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => { uploadedImage.src = e.target.result; };
+      reader.readAsDataURL(file);
+    }
+    
+    // Initialize chess game and build move table using API validation data
+    initializeChessboard(data.pgn, data.moves_validation || []);
+    
+    // Build complete PGN from allMoves (includes invalid moves marked)
+    const completePGN = buildCompletePGN();
+    pgnOutput.textContent = completePGN || data.pgn || 'No PGN generated';
+    
+    // Scroll to results
+    resultsSection.scrollIntoView({ behavior: 'smooth' });
+  }
+  
+  function buildCompletePGN() {
+    if (allMoves.length === 0) return '';
+    
+    let pgn = '[Event "Scoresheet OCR"]\n[Site "?"]\n[Date "' + new Date().toISOString().split('T')[0].replace(/-/g, '.') + '"]\n[Round "?"]\n[White "?"]\n[Black "?"]\n[Result "*"]\n\n';
+    
+    let lastMoveNum = 0;
+    for (const move of allMoves) {
+      if (move.isWhite) {
+        pgn += move.moveNum + '. ';
+        lastMoveNum = move.moveNum;
+      } else if (move.moveNum !== lastMoveNum) {
+        pgn += move.moveNum + '... ';
+        lastMoveNum = move.moveNum;
+      }
+      
+      if (move.valid) {
+        pgn += move.san + ' ';
+      } else {
+        pgn += move.san + ' {invalid} ';
+      }
+    }
+    
+    pgn += '*';
+    return pgn;
+  }
+
+  // Helper to try a move with disambiguation fallbacks
+  // Handles ambiguous moves like "Nd2" when both Nbd2 and Nfd2 are legal
+  function tryMoveWithDisambiguation(game, moveText) {
+    // First try the move as-is
+    let result = game.move(moveText, { sloppy: true });
+    if (result) return result;
+    
+    // If it's a piece move (N, B, R, Q) that might be ambiguous, try all disambiguation patterns
+    const match = moveText.match(/^([NBRQK])([a-h]?[1-8]?)?(x?)([a-h][1-8])(.*)$/);
+    if (match) {
+      const piece = match[1];
+      const disambiguation = match[2] || '';
+      const capture = match[3];
+      const dest = match[4];
+      const suffix = match[5] || '';
+      
+      // If no disambiguation, try adding file/rank disambiguation
+      if (!disambiguation) {
+        // Try each file a-h
+        for (const file of 'abcdefgh') {
+          result = game.move(piece + file + capture + dest + suffix, { sloppy: true });
+          if (result) return result;
+        }
+        // Try each rank 1-8
+        for (const rank of '12345678') {
+          result = game.move(piece + rank + capture + dest + suffix, { sloppy: true });
+          if (result) return result;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  function initializeChessboard(pgn, movesValidation) {
+    // Initialize chess.js game
+    game = new Chess();
+    moveHistory = [];
+    currentMoveIndex = -1;
+    
+    // Use moves_validation from API if available, otherwise parse PGN
+    if (movesValidation && movesValidation.length > 0) {
+      // Build allMoves array with ALL moves (valid + invalid)
+      // Each entry stores the FEN to display (last valid position for invalid moves)
+      allMoves = [];
+      let currentFen = game.fen();
+      
+      for (const mv of movesValidation) {
+        // White move
+        if (mv.white && mv.white.text) {
+          if (mv.white.valid) {
+            const result = tryMoveWithDisambiguation(game, mv.white.text);
+            if (result) {
+              currentFen = game.fen();
+              allMoves.push({ san: result.san, fen: currentFen, moveNum: mv.move_number, isWhite: true, valid: true });
+            } else {
+              allMoves.push({ san: mv.white.text, fen: currentFen, moveNum: mv.move_number, isWhite: true, valid: false });
+            }
+          } else {
+            allMoves.push({ san: mv.white.text, fen: currentFen, moveNum: mv.move_number, isWhite: true, valid: false });
+          }
+        }
+        // Black move
+        if (mv.black && mv.black.text) {
+          if (mv.black.valid) {
+            const result = tryMoveWithDisambiguation(game, mv.black.text);
+            if (result) {
+              currentFen = game.fen();
+              allMoves.push({ san: result.san, fen: currentFen, moveNum: mv.move_number, isWhite: false, valid: true });
+            } else {
+              allMoves.push({ san: mv.black.text, fen: currentFen, moveNum: mv.move_number, isWhite: false, valid: false });
+            }
+          } else {
+            allMoves.push({ san: mv.black.text, fen: currentFen, moveNum: mv.move_number, isWhite: false, valid: false });
+          }
+        }
+      }
+      moveHistory = allMoves.filter(m => m.valid);
+      // Populate move table with API validation data (shows all moves)
+      populateMoveTableFromAPI(movesValidation);
+    } else if (pgn) {
+      // Fallback: parse from PGN string
+      let movesOnly = pgn;
+      while (movesOnly.indexOf('[') !== -1) {
+        const start = movesOnly.indexOf('[');
+        const end = movesOnly.indexOf(']', start);
+        if (end !== -1) {
+          movesOnly = movesOnly.substring(0, start) + movesOnly.substring(end + 1);
+        } else {
+          break;
+        }
+      }
+      movesOnly = movesOnly.trim();
+      const tokens = movesOnly.split(/\s+/);
+      const moveTokens = tokens.filter(t => {
+        if (!t) return false;
+        if (t.match(/^\d+\./)) return false;
+        if (t === '*' || t === '1-0' || t === '0-1' || t === '1/2-1/2') return false;
+        return true;
+      });
+      
+      let rawMoves = [];
+      for (const move of moveTokens) {
+        const result = game.move(move, { sloppy: true });
+        if (result) {
+          moveHistory.push({ san: result.san, fen: game.fen() });
+          rawMoves.push({ san: result.san, valid: true });
+        } else {
+          rawMoves.push({ san: move, valid: false });
+        }
+      }
+      populateMoveTable(rawMoves);
+    }
+    
+    // Initialize the board
+    if (board) {
+      board.destroy();
+    }
+    
+    board = Chessboard('chess-board', {
+      position: 'start',
+      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+    });
+    
+    // Start at the first move (position after 1. e4)
+    goToMove(0);
+    
+    // Update counter
+    updateMoveDisplay();
+  }
+  
+  function populateMoveTable(rawMoves) {
+    moveList.innerHTML = '';
+    
+    // Group moves by pairs (white, black)
+    const numPairs = Math.ceil(rawMoves.length / 2);
+    
+    for (let i = 0; i < numPairs; i++) {
+      const whiteMove = rawMoves[i * 2];
+      const blackMove = rawMoves[i * 2 + 1];
+      
+      const row = document.createElement('tr');
+      row.className = 'border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer';
+      
+      const whiteClass = whiteMove && !whiteMove.valid ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300' : '';
+      const blackClass = blackMove && !blackMove.valid ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300' : '';
+      
+      row.innerHTML = `
+        <td class="px-2 py-1 font-medium text-gray-500">${i + 1}.</td>
+        <td class="px-2 py-1 ${whiteClass}" data-move-idx="${i * 2}">${whiteMove ? whiteMove.san : ''}</td>
+        <td class="px-2 py-1 ${blackClass}" data-move-idx="${i * 2 + 1}">${blackMove ? blackMove.san : ''}</td>
+      `;
+      
+      // Click handlers to navigate to move
+      row.querySelectorAll('td[data-move-idx]').forEach(td => {
+        td.addEventListener('click', () => {
+          const idx = parseInt(td.getAttribute('data-move-idx'));
+          // Only navigate to valid moves
+          let validIdx = 0;
+          for (let j = 0; j <= idx; j++) {
+            if (rawMoves[j] && rawMoves[j].valid) validIdx++;
+          }
+          goToMove(validIdx - 1);
+        });
+      });
+      
+      moveList.appendChild(row);
+    }
+  }
+  
+  function populateMoveTableFromAPI(movesValidation) {
+    moveList.innerHTML = '';
+    
+    // Build table from allMoves (uses chess.js validation for sequential correctness)
+    // Group moves by pairs (white, black)
+    let moveIdx = 0;
+    let lastMoveNum = 0;
+    let currentRow = null;
+    let whiteCell = null;
+    
+    for (let i = 0; i < allMoves.length; i++) {
+      const move = allMoves[i];
+      
+      if (move.isWhite) {
+        // Start new row
+        currentRow = document.createElement('tr');
+        currentRow.className = 'border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700';
+        
+        const moveNumCell = document.createElement('td');
+        moveNumCell.className = 'px-2 py-1 font-medium text-gray-500';
+        moveNumCell.textContent = move.moveNum + '.';
+        currentRow.appendChild(moveNumCell);
+        
+        // White move cell
+        whiteCell = document.createElement('td');
+        const whiteClass = !move.valid ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 cursor-pointer' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600';
+        whiteCell.className = 'px-2 py-1 ' + whiteClass;
+        whiteCell.setAttribute('data-move-idx', i);
+        whiteCell.textContent = move.san;
+        whiteCell.addEventListener('click', () => goToMove(i));
+        currentRow.appendChild(whiteCell);
+        
+        // Create empty black cell placeholder
+        const blackCell = document.createElement('td');
+        blackCell.className = 'px-2 py-1';
+        blackCell.setAttribute('data-move-idx', '-1');
+        currentRow.appendChild(blackCell);
+        
+        moveList.appendChild(currentRow);
+        lastMoveNum = move.moveNum;
+      } else {
+        // Black move - update the last row's black cell
+        if (currentRow && currentRow.children.length >= 3) {
+          const blackCell = currentRow.children[2];
+          const blackClass = !move.valid ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 cursor-pointer' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600';
+          blackCell.className = 'px-2 py-1 ' + blackClass;
+          blackCell.setAttribute('data-move-idx', i);
+          blackCell.textContent = move.san;
+          blackCell.addEventListener('click', () => goToMove(i));
+        }
+      }
+    }
+  }
+
+  function goToMove(index) {
+    if (!game || !board) return;
+    
+    // Clamp index - use allMoves length if available
+    const moves = allMoves.length > 0 ? allMoves : moveHistory;
+    index = Math.max(-1, Math.min(index, moves.length - 1));
+    currentMoveIndex = index;
+    
+    // Set board position
+    if (index === -1 || index < 0) {
+      board.position('start');
+    } else if (index < moves.length) {
+      board.position(moves[index].fen);
+    }
+    
+    updateMoveDisplay();
+    highlightCurrentMove();
+  }
+
+  function updateMoveDisplay() {
+    const moves = allMoves.length > 0 ? allMoves : moveHistory;
+    const total = moves.length;
+    const current = currentMoveIndex + 1;
+    moveCounter.textContent = `${current} / ${total}`;
+    
+    if (currentMoveIndex >= 0 && currentMoveIndex < moves.length) {
+      const entry = moves[currentMoveIndex];
+      const moveNum = entry.moveNum !== undefined ? entry.moveNum : Math.floor(currentMoveIndex / 2) + 1;
+      const isWhite = entry.isWhite !== undefined ? entry.isWhite : (currentMoveIndex % 2 === 0);
+      const invalidMarker = entry.valid === false ? ' [invalid]' : '';
+      currentMoveDisplay.textContent = `${moveNum}${isWhite ? '.' : '...'} ${entry.san}${invalidMarker}`;
+    } else {
+      currentMoveDisplay.textContent = 'Starting position';
+    }
+  }
+  
+  function highlightCurrentMove() {
+    // Remove all highlights
+    moveList.querySelectorAll('td').forEach(td => {
+      td.classList.remove('bg-primary-100', 'dark:bg-primary-900', 'ring-2', 'ring-primary-500');
+    });
+    
+    if (currentMoveIndex < 0) return;
+    
+    // Find the cell with matching data-move-idx
+    const targetCell = moveList.querySelector(`td[data-move-idx="${currentMoveIndex}"]`);
+    if (targetCell) {
+      targetCell.classList.add('bg-primary-100', 'dark:bg-primary-900', 'ring-2', 'ring-primary-500');
+      // Scroll cell into view
+      targetCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+})();
+</script>
+
