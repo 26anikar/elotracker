@@ -34,4 +34,4 @@ The pipeline uses a 6 step process to process the image:
 There are three directories that contain code and utilities for the website. The website is built on top of the Drogon C++ framework.
 1. `controllers`: This directory contains the controllers, the C++ classes, that handle the HTTP requests.
 2. `views`: This directory contains the layout csp files that show how a page would look like.
-3. 'tools': This contains the scrapy config for crawlers and also the C++ files to copy the crawled content to the backend RocksDB key value pair.
+3. `tools`: This contains the scrapy config for crawlers and also the C++ files to copy the crawled content to the backend RocksDB key value pair.
