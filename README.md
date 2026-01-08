@@ -18,7 +18,7 @@ The pipeline uses a 6 step process to process the image:
    <img src="screenshot/step1.png" width="50%" alt="Figure 1: Detection of number and move cells">
 
 2. **Step 2: Deskewing**
-   Change the orientation of the scoresheet image. Since users may take pictures at tilted angles, the slope of the YOLO boxes is used to deskew the image.<br><br>
+   Change the orientation of the scoresheet image. Since users may take pictures at tilted angles, the slope of the YOLO boxes is used to deskew the image.For this specific scoresheet, it was already quite vertically aligned. So its pretty much like it was originally. <br><br>
    <img src="screenshot/step2.png" width="50%" alt="Figure 2: Deskewing the image">
 
 3. **Step 3: Number Anchors**
