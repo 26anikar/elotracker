@@ -35,7 +35,9 @@ The pipeline uses a 6 step process to process the image:
 
 
 6.  **Step 6: OCR Detection**
-   The open-source PaddleOCR model is finetuned on the HCS dataset to recognize the moves within the cells. A beam search is run to look at the different options and remove ones that are not valid moves based on the python-chess library. The OCR results can be seen in the image.<br><br>
+
+   The open-source PaddleOCR model is fine-tuned on the HCS dataset to recognize handwritten chess moves. Each detected cell is cropped with slight padding and resized to match training dimensions.
+A beam search decodes the CTC output to produce multiple candidate readings. These candidates are validated against the current board position using python-chess, thus illegal moves are filtered out, and common OCR errors (like 0 vs O for castling) are automatically corrected. The pipeline stops early when consecutive zero-confidence moves indicate the game has ended. The OCR results can be seen in the image.<br><br>
    <img src="screenshot/step6.jpg" width="50%" alt="Figure 6: OCR Result">
 
 
